@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RateTrack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Add new pink colors to Tailwind's theme
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-bg': '#FFF5F7', // Very light pink
+                        'brand-sidebar': '#FFE4E6', // Light pink
+                        'brand-active': '#F8B4B4', // Medium pink
+                        'brand-active-text': '#C53030', // Dark red/pink
+                    },
+                },
+            },
+        };
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" type="module" defer></script>
+</head>
+
+<body class="bg-brand-bg font-sans text-gray-800">
+
+    <div class="flex h-screen">
+        <aside class="w-64 bg-brand-sidebar p-6 hidden md:flex flex-col flex-shrink-0">
+            <h1 class="text-2xl font-bold text-pink-800 mb-8">RateTrack</h1>
+            
+            <nav class="flex-grow">
+                <ul class="space-y-2">
+                    <li>
+                        <button data-page="dashboard-page" class="sidebar-link active">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.75a.75.75 0 01.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5A.75.75 0 0110 3.75zM10 8a.75.75 0 01.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5A.75.75 0 0110 8zM8.5 12.75a.75.75 0 00-1.5 0v1.5h-1.5a.75.75 0 000 1.5h1.5v1.5a.75.75 0 001.5 0v-1.5h1.5a.75.75 0 000-1.5h-1.5v-1.5zM11.5 12.75a.75.75 0 001.5 0v1.5h1.5a.75.75 0 000 1.5h-1.5v1.5a.75.75 0 00-1.5 0v-1.5h-1.5a.75.75 0 000-1.5h1.5v-1.5zM3 3a1 1 0 00-1 1v12a1 1 0 001 1h14a1 1 0 001-1V4a1 1 0 00-1-1H3zm13 1v9H4V4h12z" /></svg>
+                            <span>Dashboard</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button data-page="manage-rates-page" class="sidebar-link">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                            <span>Manage Rates</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button data-page="analytics-page" class="sidebar-link">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M1 2.75A.75.75 0 011.75 2h16.5a.75.75 0 010 1.5H1.75A.75.75 0 011 2.75zm0 5A.75.75 0 011.75 7h16.5a.75.75 0 010 1.5H1.75A.75.75 0 011 7.75zM1.75 12a.75.75 0 000 1.5h16.5a.75.75 0 000-1.5H1.75zm0 5.25a.75.75 0 000 1.5h16.5a.75.75 0 000-1.5H1.75z" clip-rule="evenodd" /></svg>
+                            <span>Analytics</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button data-page="history-page" class="sidebar-link">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V6A5.5 5.5 0 005.05 9.242a.75.75 0 11-1.458-.396A7 7 0 0110 2.25a.75.75 0 01.75.75v-.75zm.75 11.25a.75.75 0 01-.75.75A5.5 5.5 0 014.5 9.25a.75.75 0 011.5 0A4 4 0 0010 13a.75.75 0 01.75.75zM10.75 5.75a.75.75 0 00-1.5 0v3.586l-2.146 2.147a.75.75 0 001.06 1.061L10.5 10.811V5.75z" clip-rule="evenodd" /></svg>
+                            <span>History</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm p-4 flex justify-end items-center">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium text-gray-700">dpgnur@oswallumbers.com</span>
+                    <button id="logout-button" class="text-sm text-red-600 hover:underline" title="Logout">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div id="page-container" class="flex-1 overflow-y-auto p-6 pb-20">
+
+                <div id="dashboard-page" class="page">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">All Party Rates</h2>
+                    <div id="dashboard-rates-list" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <p class="text-gray-500">Loading rates...</p>
+                    </div>
+                </div>
+
+                <div id="manage-rates-page" class="page hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Rates</h1>
+                    
+                    <div class="max-w-2xl bg-white p-6 rounded-lg shadow-lg mb-8">
+                        <h2 id="form-title" class="text-2xl font-semibold mb-6 text-blue-700">Add New Rate</h2>
+                        <form id="rate-form" class="space-y-4">
+                            <div>
+                                <label for="customer" class="block text-sm font-medium text-gray-700">Customer</label>
+                                <input type="text" id="customer" list="customer-list" class="form-input" required>
+                                <datalist id="customer-list"></datalist>
+                            </div>
+                            <div>
+                                <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
+                                <input type="text" id="country" list="country-list" class="form-input" required>
+                                <datalist id="country-list"></datalist>
+                            </div>
+                            <div>
+                                <label for="motor" class="block text-sm font-medium text-gray-700">Motor / Product</label>
+                                <input type="text" id="motor" list="motor-list" class="form-input" required>
+                                <datalist id="motor-list"></datalist>
+                            </div>
+                            <div>
+                                <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+                                <input type="number" id="price" step="0.01" min="0" class="form-input" required>
+                            </div>
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" id="clear-form-button" class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">Clear</button>
+                                <button type="submit" id="submit-rate-button" class="px-4 py-2 rounded-md border border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700">Save Rate</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">All Current Rates</h2>
+                    <div class="mb-4">
+                        <input type="text" id="filter-input" placeholder="Filter by customer, country, or motor..." class="w-full max-w-lg p-3 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div id="rate-card-list" class="space-y-4">
+                        <p class="text-gray-500">Loading rates...</p>
+                    </div>
+                </div>
+
+                <div id="analytics-page" class="page hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Analytics</h1>
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <p class="text-gray-600">This page is a placeholder for your future analytics and charts.</p>
+                    </div>
+                </div>
+
+                <div id="history-page" class="page hidden">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">Full Rate History</h1>
+                    <div id="history-card-list" class="space-y-4">
+                        <p class="text-gray-500">Loading history...</p>
+                    </div>
+                </div>
+
+            </div> <nav class="md:hidden bg-white shadow-lg p-2 fixed bottom-0 left-0 right-0 flex justify-around">
+                <button data-page="dashboard-page" class="mobile-nav-link p-2 rounded-lg"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.75a.75.75 0 01.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5A.75.75 0 0110 3.75zM10 8a.75.75 0 01.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5A.75.75 0 0110 8zM8.5 12.75a.75.75 0 00-1.5 0v1.5h-1.5a.75.75 0 000 1.5h1.5v1.5a.75.75 0 001.5 0v-1.5h1.5a.75.75 0 000-1.5h-1.5v-1.5zM11.5 12.75a.75.75 0 001.5 0v1.5h1.5a.75.75 0 000 1.5h-1.5v1.5a.75.75 0 00-1.5 0v-1.5h-1.5a.75.75 0 000-1.5h1.5v-1.5zM3 3a1 1 0 00-1 1v12a1 1 0 001 1h14a1 1 0 001-1V4a1 1 0 00-1-1H3zm13 1v9H4V4h12z" /></svg></button>
+                <button data-page="manage-rates-page" class="mobile-nav-link p-2 rounded-lg"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg></button>
+                <button data-page="analytics-page" class="mobile-nav-link p-2 rounded-lg"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M1 2.75A.75.75 0 011.75 2h16.5a.75.75 0 010 1.5H1.75A.75.75 0 011 2.75zm0 5A.75.75 0 011.75 7h16.5a.75.75 0 010 1.5H1.75A.75.75 0 011 7.75zM1.75 12a.75.75 0 000 1.5h16.5a.75.75 0 000-1.5H1.75zm0 5.25a.75.75 0 000 1.5h16.5a.75.75 0 000-1.5H1.75z" clip-rule="evenodd" /></svg></button>
+                <button data-page="history-page" class="mobile-nav-link p-2 rounded-lg"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V6A5.5 5.5 0 005.05 9.242a.75.75 0 11-1.458-.396A7 7 0 0110 2.25a.75.75 0 01.75.75v-.75zm.75 11.25a.75.75 0 01-.75.75A5.5 5.5 0 014.5 9.25a.75.75 0 011.5 0A4 4 0 0010 13a.75.75 0 01.75.75zM10.75 5.75a.75.75 0 00-1.5 0v3.586l-2.146 2.147a.75.75 0 001.06 1.061L10.5 10.811V5.75z" clip-rule="evenodd" /></svg></button>
+            </nav>
+
+        </main>
+
+        <div id="login-page" class="page fixed inset-0 z-50 flex flex-col justify-center items-center h-full p-4 bg-gray-100">
+            <div class="w-full max-w-sm">
+                <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">RateTrack</h1>
+                <div id="pin-display" class="h-16 w-full max-w-xs mx-auto flex items-center justify-center text-4xl tracking-[0.5em] rounded-lg border-gray-300 border-2 bg-white shadow-inner">
+                </div>
+                <div class="grid grid-cols-3 gap-4 mt-8 max-w-xs mx-auto">
+                    <button data-key="1" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">1</button>
+                    <button data-key="2" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">2</button>
+                    <button data-key="3" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">3</button>
+                    <button data-key="4" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">4</button>
+                    <button data-key="5" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">5</button>
+                    <button data-key="6" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">6</button>
+                    <button data-key="7" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">7</button>
+                    <button data-key="8" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">8</button>
+                    <button data-key="9" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">9</button>
+                    <button data-key="C" class="keypad-button text-3xl p-6 rounded-lg bg-yellow-400 text-yellow-800 shadow-md hover:bg-yellow-300">C</button>
+                    <button data-key="0" class="keypad-button text-3xl p-6 rounded-lg bg-white shadow-md hover:bg-gray-50 active:bg-gray-100">0</button>
+                    <button data-key="del" class="keypad-button text-3xl p-6 rounded-lg bg-red-500 text-white shadow-md hover:bg-red-400">
+                        <svg class="w-8 h-8 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75 14.25 12m0 0 2.25 2.25M14.25 12l2.25-2.25M14.25 12 12 14.25m-2.58 4.92-6.374-6.375a1.125 1.125 0 0 1 0-1.59L9.42 4.82c.47-.47 1.232-.47 1.703 0l6.375 6.375-6.375 6.375a1.125 1.125 0 0 1-1.59 0Z" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div> </body>
+</html>
