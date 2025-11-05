@@ -125,9 +125,46 @@
 
                 <div id="analytics-page" class="page hidden">
                     <h1 class="text-3xl font-bold text-gray-800 mb-6">Analytics</h1>
-                    <div class="bg-white p-6 rounded-lg shadow-lg">
-                        <p class="text-gray-600">This page is a placeholder for your future analytics and charts.</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Total Rates</h3>
+                            <p id="stat-total-rates" class="text-3xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Unique Customers</h3>
+                            <p id="stat-total-customers" class="text-3xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Unique Countries</h3>
+                            <p id="stat-total-countries" class="text-3xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Unique Motors</h3>
+                            <p id="stat-total-motors" class="text-3xl font-bold text-blue-600">0</p>
+                        </div>
                     </div>
+
+                    <h2 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Price Analysis</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Average Price</h3>
+                            <p id="stat-avg-price" class="text-3xl font-bold text-green-600">₹0.00</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Highest Price</h3>
+                            <p id="stat-high-price" class="text-3xl font-bold text-green-600">₹0.00</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                            <h3 class="text-sm font-medium text-gray-500">Lowest Price</h3>
+                            <p id="stat-low-price" class="text-3xl font-bold text-green-600">₹0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-lg mt-8">
+                        <p class="text-gray-600">Future charts and graphs can be added here.</p>
+                    </div>
+
                 </div>
 
                 <div id="history-page" class="page hidden">
