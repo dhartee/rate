@@ -16,8 +16,6 @@ try {
     }
 } catch (e) {
     console.warn(e.message); 
-    
-    // !!!!!!!!!!! PASTE YOUR CONFIG OBJECT HERE !!!!!!!!!!!
     firebaseConfig = {
                 apiKey: "AIzaSyCWkWLPUbgJElIb-pjytAU4qhPWWFnmPIM",
                 authDomain: "rate-guru.firebaseapp.com",
@@ -26,7 +24,7 @@ try {
                 messagingSenderId: "846627805911",
                 appId: "1:846627805911:web:bff1f87aa722b05e8d6e92",
                 measurementId: "G-K90ZHKT0TQ"
-            };  
+            };
     
     if (firebaseConfig.apiKey.startsWith("AIzaSy...")) {
          // Use built-in alert
@@ -108,7 +106,7 @@ function loadInitialData() {
     listenForHistory();
 }
 
-// --- Page Navigation (UPDATED) ---
+// --- Page Navigation ---
 function setupNavigation() {
     const navButtons = $$('button[data-page]');
     
@@ -131,10 +129,7 @@ function setupNavigation() {
 }
 
 function showPage(pageId) {
-    // Hide all pages
     $$('#page-container .page').forEach(page => page.classList.add('hidden'));
-    
-    // Show the target page
     const targetPage = $(`#${pageId}`);
     if (targetPage) {
         targetPage.classList.remove('hidden');
@@ -142,14 +137,12 @@ function showPage(pageId) {
     } else {
         console.error(`Page not found: ${pageId}`);
     }
-
-    // Hide login overlay if showing a main page
     if (pageId !== 'login-page') {
         $('#login-page').classList.add('hidden');
     }
 }
 
-// --- PIN Login (UPDATED) ---
+// --- PIN Login ---
 function setupPinPad() {
     $$('.keypad-button').forEach(button => {
         button.addEventListener('click', () => {
@@ -172,7 +165,6 @@ function handlePinKey(key) {
 function checkPin() {
     if (currentPin === correctPin) {
         console.log("Login Successful!");
-        // Hide login overlay and show dashboard
         $('#login-page').classList.add('hidden');
         showPage('dashboard-page');
     } else {
@@ -183,7 +175,7 @@ function checkPin() {
     }
 }
 
-// --- Data Population (Datalists) ---
+// --- Data Population (Datalists) (UPDATED) ---
 function loadAndPopulateDatalist(datalistId, collectionRef, fieldName) {
     const datalist = $(`#${datalistId}`);
     if (!datalist) return;
@@ -193,12 +185,27 @@ function loadAndPopulateDatalist(datalistId, collectionRef, fieldName) {
             const data = doc.data();
             if (data[fieldName]) uniqueValues.add(data[fieldName].trim());
         });
+
+        // Populate datalist
         datalist.innerHTML = '';
         uniqueValues.forEach(value => {
             const option = document.createElement('option');
             option.value = value;
             datalist.appendChild(option);
         });
+
+        // --- NEW ANALYTICS LOGIC ---
+        // Update the analytics card count
+        const count = snapshot.size;
+        if (datalistId === 'customer-list') {
+            $('#stat-total-customers').textContent = count;
+        } else if (datalistId === 'country-list') {
+            $('#stat-total-countries').textContent = count;
+        } else if (datalistId === 'motor-list') {
+            $('#stat-total-motors').textContent = count;
+        }
+        // --- END NEW LOGIC ---
+
     }, (error) => console.error(`Error loading ${datalistId}:`, error));
     rateDataListeners.push(unsub);
 }
@@ -289,34 +296,62 @@ function listenForRates() {
             const noRatesMsg = `<p class="text-gray-500 p-4">No rates found. Add one!</p>`;
             rateList.innerHTML = noRatesMsg;
             dashboardList.innerHTML = noRatesMsg; 
+
+            // --- ANALYTICS LOGIC (for empty) ---
+            $('#stat-total-rates').textContent = 0;
+            $('#stat-avg-price').textContent = '$0.00';
+            $('#stat-high-price').textContent = '$0.00';
+            $('#stat-low-price').textContent = '$0.00';
+            // --- END LOGIC ---
             return;
         }
+
+        // --- ANALYTICS LOGIC (for calculations) ---
+        let totalRateValue = 0;
+        let highestRate = 0;
+        let lowestRate = Infinity;
+        const rateCount = snapshot.size;
+        // --- END LOGIC ---
 
         snapshot.docs.forEach(doc => {
             const rate = doc.data();
             const rateId = doc.id;
             
+            // --- ANALYTICS LOGIC (inside loop) ---
+            const price = rate.price;
+            totalRateValue += price;
+            if (price > highestRate) highestRate = price;
+            if (price < lowestRate) lowestRate = price;
+            // --- END LOGIC ---
+
             rateList.appendChild(createManagementCard(rate, rateId));
             dashboardList.appendChild(createDashboardCard(rate));
         });
+
+        // --- ANALYTICS LOGIC (final update) ---
+        const avgRate = totalRateValue / rateCount;
+        $('#stat-total-rates').textContent = rateCount;
+        $('#stat-avg-price').textContent = `$${avgRate.toFixed(2)}`;
+        $('#stat-high-price').textContent = `$${highestRate.toFixed(2)}`;
+        $('#stat-low-price').textContent = `$${lowestRate.toFixed(2)}`;
+        // --- END LOGIC ---
         
         setupRateCardButtons(); // Attach listeners
     }, (error) => console.error("Error listening for rates:", error));
     rateDataListeners.push(unsub);
 }
 
+// Helper function to create the card for the "Manage Rates" page
 function createManagementCard(rate, rateId) {
     const card = document.createElement('div');
     card.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500 rate-card';
     card.setAttribute('data-customer', rate.customer.toLowerCase());
     card.setAttribute('data-country', rate.country.toLowerCase());
     card.setAttribute('data-motor', rate.motor.toLowerCase());
-    
-    // UPDATED: This HTML includes solid buttons, not text links or icons
     card.innerHTML = `
         <div class="flex justify-between items-start mb-2">
             <h3 class="text-lg font-bold text-blue-700">${rate.motor}</h3>
-            <span class="text-xl font-bold text-green-600">₹${rate.price.toFixed(2)}</span>
+            <span class="text-xl font-bold text-green-600">$${rate.price.toFixed(2)}</span>
         </div>
         <div class="mb-3 space-y-1">
             <p class="text-sm text-gray-700"><strong>Customer:</strong> ${rate.customer}</p>
@@ -337,23 +372,17 @@ function createManagementCard(rate, rateId) {
 
 
 function setupRateCardButtons() {
-    // Correctly remove old listeners and add new ones
-    
     $$('.edit-rate-btn').forEach(button => {
-        const newButton = button.cloneNode(true); // Create a clone
-        button.parentNode.replaceChild(newButton, button); // Replace the old button with the clone
-        
-        // Add the listener to the NEW button
+        const newButton = button.cloneNode(true); 
+        button.parentNode.replaceChild(newButton, button); 
         newButton.addEventListener('click', (e) => {
             handleEditRate(e.target.getAttribute('data-id'));
         });
     });
 
     $$('.delete-rate-btn').forEach(button => {
-        const newButton = button.cloneNode(true); // Create a clone
-        button.parentNode.replaceChild(newButton, button); // Replace the old button with the clone
-        
-        // Add the listener to the NEW button
+        const newButton = button.cloneNode(true); 
+        button.parentNode.replaceChild(newButton, button); 
         newButton.addEventListener('click', (e) => {
             handleDeleteRate(e.target.getAttribute('data-id'));
         });
@@ -413,7 +442,7 @@ function filterRateCards(e) {
     });
 }
 
-// --- History (UPDATED) ---
+// --- History ---
 function listenForHistory() {
     const unsub = onSnapshot(getRateHistoryCollection(), (snapshot) => {
         const historyList = $('#history-card-list');
@@ -452,7 +481,7 @@ function createDashboardCard(entry) {
     card.innerHTML = `
         <h3 class="text-sm font-bold text-gray-800 uppercase truncate">${entry.customer}</h3>
         <p class="text-xs text-gray-500 mb-2 truncate">${entry.motor}</p>
-        <p class="text-3xl font-bold text-gray-900 mb-2">₹${entry.price ? entry.price.toFixed(2) : '0.00'}</p>
+        <p class="text-3xl font-bold text-gray-900 mb-2">$${entry.price ? entry.price.toFixed(2) : '0.00'}</p>
         <p class="text-xs text-gray-400">by ${entry.updatedBy || 'System'}</p>
         <p class="text-xs text-gray-400">${date} ${time}</p>
     `;
@@ -475,7 +504,7 @@ function createHistoryCard(entry) {
         </div>
         <p class="text-sm text-gray-700"><strong>Customer:</strong> ${entry.customer}</p>
         <p class="text-sm text-gray-700"><strong>Country:</strong> ${entry.country}</p>
-        <p class="text-sm font-medium text-gray-800">Price: ₹${entry.price ? entry.price.toFixed(2) : 'N/A'}</p>
+        <p class="text-sm font-medium text-gray-800">Price: $${entry.price ? entry.price.toFixed(2) : 'N/A'}</p>
         <div class="border-t border-gray-100 mt-3 pt-2 text-xs text-gray-500">
             <p>${entry.timestamp ? new Date(entry.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
             <p>User: ${entry.updatedBy || entry.deletedBy || 'N/A'}</p>
