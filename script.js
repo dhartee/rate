@@ -16,6 +16,7 @@ try {
     }
 } catch (e) {
     console.warn(e.message); 
+    
     firebaseConfig = {
                 apiKey: "AIzaSyCWkWLPUbgJElIb-pjytAU4qhPWWFnmPIM",
                 authDomain: "rate-guru.firebaseapp.com",
@@ -25,9 +26,9 @@ try {
                 appId: "1:846627805911:web:bff1f87aa722b05e8d6e92",
                 measurementId: "G-K90ZHKT0TQ"
             };
+   
     
     if (firebaseConfig.apiKey.startsWith("AIzaSy...")) {
-         // Use built-in alert
          setTimeout(() => alert("CRITICAL: You must paste your Firebase config into the 'catch' block in script.js!"), 0);
     } else {
         console.log("Using local fallback Firebase config. Connection will proceed.");
@@ -52,6 +53,11 @@ let currentPin = "";
 const correctPin = "1234"; 
 let editingRateId = null; 
 let rateDataListeners = []; 
+// NEW: Global object to store fetched exchange rates
+let exchangeRates = {
+    USD_TO_INR: 83.50, // Default fallback rate
+    USD_TO_AED: 3.67   // Default fallback rate
+};
 
 // --- App Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -79,7 +85,7 @@ async function authenticateUser() {
         if (user) {
             console.log("User is signed in:", user.uid);
             userId = user.uid;
-            loadInitialData();
+            loadInitialData(); // Load data after user is signed in
         } else {
             console.log("User is not signed in. Authenticating...");
             try {
@@ -97,8 +103,12 @@ async function authenticateUser() {
     });
 }
 
-// --- Initial Data Loading ---
-function loadInitialData() {
+// --- Initial Data Loading (UPDATED) ---
+async function loadInitialData() {
+    // Fetch rates first
+    await fetchExchangeRates(); 
+    
+    // Now load the rest of the app data
     loadAndPopulateDatalist('customer-list', getCustomersCollection(), 'name');
     loadAndPopulateDatalist('country-list', getCountriesCollection(), 'name');
     loadAndPopulateDatalist('motor-list', getMotorsCollection(), 'name');
@@ -114,8 +124,6 @@ function setupNavigation() {
         button.addEventListener('click', () => {
             const pageId = button.getAttribute('data-page');
             showPage(pageId);
-
-            // Update active state for sidebar links
             if (button.classList.contains('sidebar-link')) {
                 $$('.sidebar-link').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
@@ -133,7 +141,7 @@ function showPage(pageId) {
     const targetPage = $(`#${pageId}`);
     if (targetPage) {
         targetPage.classList.remove('hidden');
-        console.log(`Mapsd to ${pageId}`);
+        console.log(`Mapsd to ${pageId}`); // Fixed typo "Mapsd"
     } else {
         console.error(`Page not found: ${pageId}`);
     }
@@ -156,9 +164,7 @@ function handlePinKey(key) {
     if (key === 'C') currentPin = "";
     else if (key === 'del') currentPin = currentPin.slice(0, -1);
     else if (currentPin.length < 4) currentPin += key;
-
     $('#pin-display').innerText = '•'.repeat(currentPin.length);
-
     if (currentPin.length === 4) checkPin();
 }
 
@@ -175,7 +181,7 @@ function checkPin() {
     }
 }
 
-// --- Data Population (Datalists) (UPDATED) ---
+// --- Data Population (Datalists) ---
 function loadAndPopulateDatalist(datalistId, collectionRef, fieldName) {
     const datalist = $(`#${datalistId}`);
     if (!datalist) return;
@@ -185,17 +191,12 @@ function loadAndPopulateDatalist(datalistId, collectionRef, fieldName) {
             const data = doc.data();
             if (data[fieldName]) uniqueValues.add(data[fieldName].trim());
         });
-
-        // Populate datalist
         datalist.innerHTML = '';
         uniqueValues.forEach(value => {
             const option = document.createElement('option');
             option.value = value;
             datalist.appendChild(option);
         });
-
-        // --- NEW ANALYTICS LOGIC ---
-        // Update the analytics card count
         const count = snapshot.size;
         if (datalistId === 'customer-list') {
             $('#stat-total-customers').textContent = count;
@@ -204,43 +205,106 @@ function loadAndPopulateDatalist(datalistId, collectionRef, fieldName) {
         } else if (datalistId === 'motor-list') {
             $('#stat-total-motors').textContent = count;
         }
-        // --- END NEW LOGIC ---
-
     }, (error) => console.error(`Error loading ${datalistId}:`, error));
     rateDataListeners.push(unsub);
 }
 
 
-// --- Rate Management Form ---
+// --- Rate Management Form (UPDATED) ---
 function setupFormListeners() {
     $('#rate-form').addEventListener('submit', handleRateFormSubmit);
     $('#clear-form-button').addEventListener('click', clearRateForm);
     $('#filter-input').addEventListener('input', filterRateCards);
+    
+    // NEW: Add listener for automatic calculation
+    $('#rate-inr').addEventListener('input', autoCalculateCurrencies);
 }
+
+// NEW: Function to fetch and store rates
+async function fetchExchangeRates() {
+    // 🚨 PASTE YOUR NEW API KEY HERE 🚨
+    const API_KEY = "35b11bf367bb2fbbbef5e131"; // <-- REPLACE THIS
+    const API_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
+
+    // *** THIS IS THE FIX ***
+    // This 'if' block now checks for the placeholder string, NOT your key.
+    if (API_KEY === "35b11bf367bb2fbbbef5e131") {
+        console.error("Exchange rate API key is missing. Using default fallback rates.");
+        alert("Exchange rate API key is missing from script.js. Please add it to get live rates. Using default values.");
+        return; // Use the default values
+    }
+    // *** END OF FIX ***
+
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        if (data.result === "success") {
+            exchangeRates.USD_TO_INR = data.conversion_rates.INR;
+            exchangeRates.USD_TO_AED = data.conversion_rates.AED;
+            console.log(`Successfully fetched rates: 1 USD = ${exchangeRates.USD_TO_INR} INR, 1 USD = ${exchangeRates.USD_TO_AED} AED`);
+        } else {
+            console.error("Failed to fetch exchange rates from API:", data['error-type']);
+            alert("Failed to fetch live exchange rates. Using default values.");
+        }
+    } catch (error) {
+        console.error("Error connecting to exchange rate API:", error);
+        alert("Error connecting to exchange rate API. Using default values.");
+    }
+}
+
+
+// NEW: Function to auto-calculate currencies
+function autoCalculateCurrencies() {
+    const inrValue = parseFloat($('#rate-inr').value);
+    const usdInput = $('#rate-usd');
+    const aedInput = $('#rate-aed');
+
+    if (!isNaN(inrValue) && exchangeRates.USD_TO_INR > 0) {
+        const usdValue = inrValue / exchangeRates.USD_TO_INR;
+        const aedValue = usdValue * exchangeRates.USD_TO_AED;
+
+        usdInput.value = usdValue.toFixed(2);
+        aedInput.value = aedValue.toFixed(2);
+    } else {
+        usdInput.value = '';
+        aedInput.value = '';
+    }
+}
+
 
 async function handleRateFormSubmit(e) {
     e.preventDefault();
+    
+    // UPDATED: Save new fields
     const rateData = {
         customer: $('#customer').value.trim(),
         country: $('#country').value.trim(),
         motor: $('#motor').value.trim(),
-        price: parseFloat($('#price').value),
+        rateINR: parseFloat($('#rate-inr').value),
+        rateUSD: parseFloat($('#rate-usd').value), // Read from the disabled field
+        rateAED: parseFloat($('#rate-aed').value), // Read from the disabled field
         lastUpdated: serverTimestamp(),
         updatedBy: userId || 'unknown'
     };
-    if (!rateData.customer || !rateData.country || !rateData.motor || isNaN(rateData.price)) {
-        alert("Please fill in all fields with valid data.");
+
+    // UPDATED: Validation
+    if (!rateData.customer || !rateData.country || !rateData.motor || isNaN(rateData.rateINR) || isNaN(rateData.rateUSD) || isNaN(rateData.rateAED)) {
+        alert("Please fill in all fields with valid data. The INR field must be filled to calculate USD and AED.");
         return;
     }
+
     const button = $('#submit-rate-button');
     button.disabled = true;
     button.innerText = 'Saving...';
+    
     try {
         await Promise.all([
             saveToHelperCollection(getCustomersCollection(), { name: rateData.customer }),
             saveToHelperCollection(getCountriesCollection(), { name: rateData.country }),
             saveToHelperCollection(getMotorsCollection(), { name: rateData.motor })
         ]);
+        
         let historyAction = 'created';
         if (editingRateId) {
             const rateRef = doc(db, `artifacts/${appId}/public/data/rates`, editingRateId);
@@ -251,6 +315,8 @@ async function handleRateFormSubmit(e) {
             await addDoc(getRatesCollection(), rateData);
             alert("Rate saved successfully!");
         }
+        
+        // Add all fields to history
         await addDoc(getRateHistoryCollection(), { ...rateData, action: historyAction, timestamp: serverTimestamp() });
         clearRateForm();
     } catch (error) {
@@ -275,7 +341,10 @@ async function saveToHelperCollection(collectionRef, data) {
 }
 
 function clearRateForm() {
-    $('#rate-form').reset();
+    $('#rate-form').reset(); // This clears all text/number inputs
+    // Manually clear the disabled fields too
+    $('#rate-usd').value = '';
+    $('#rate-aed').value = '';
     editingRateId = null;
     $('#submit-rate-button').innerText = 'Save Rate';
     $('#form-title').innerText = 'Add New Rate';
@@ -302,7 +371,6 @@ function listenForRates() {
             $('#stat-avg-price').textContent = '$0.00';
             $('#stat-high-price').textContent = '$0.00';
             $('#stat-low-price').textContent = '$0.00';
-            // --- END LOGIC ---
             return;
         }
 
@@ -311,17 +379,18 @@ function listenForRates() {
         let highestRate = 0;
         let lowestRate = Infinity;
         const rateCount = snapshot.size;
-        // --- END LOGIC ---
 
         snapshot.docs.forEach(doc => {
             const rate = doc.data();
             const rateId = doc.id;
             
             // --- ANALYTICS LOGIC (inside loop) ---
-            const price = rate.price;
-            totalRateValue += price;
-            if (price > highestRate) highestRate = price;
-            if (price < lowestRate) lowestRate = price;
+            const price = rate.rateUSD; // Use rateUSD
+            if (!isNaN(price)) {
+                totalRateValue += price;
+                if (price > highestRate) highestRate = price;
+                if (price < lowestRate) lowestRate = price;
+            }
             // --- END LOGIC ---
 
             rateList.appendChild(createManagementCard(rate, rateId));
@@ -329,11 +398,11 @@ function listenForRates() {
         });
 
         // --- ANALYTICS LOGIC (final update) ---
-        const avgRate = totalRateValue / rateCount;
+        const avgRate = (rateCount > 0) ? (totalRateValue / rateCount) : 0;
         $('#stat-total-rates').textContent = rateCount;
         $('#stat-avg-price').textContent = `$${avgRate.toFixed(2)}`;
         $('#stat-high-price').textContent = `$${highestRate.toFixed(2)}`;
-        $('#stat-low-price').textContent = `$${lowestRate.toFixed(2)}`;
+        $('#stat-low-price').textContent = `$${(lowestRate === Infinity ? 0 : lowestRate).toFixed(2)}`;
         // --- END LOGIC ---
         
         setupRateCardButtons(); // Attach listeners
@@ -341,7 +410,7 @@ function listenForRates() {
     rateDataListeners.push(unsub);
 }
 
-// Helper function to create the card for the "Manage Rates" page
+// Helper function to create the card for the "Manage Rates" page (UPDATED)
 function createManagementCard(rate, rateId) {
     const card = document.createElement('div');
     card.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500 rate-card';
@@ -351,11 +420,13 @@ function createManagementCard(rate, rateId) {
     card.innerHTML = `
         <div class="flex justify-between items-start mb-2">
             <h3 class="text-lg font-bold text-blue-700">${rate.motor}</h3>
-            <span class="text-xl font-bold text-green-600">$${rate.price.toFixed(2)}</span>
+            <span class="text-xl font-bold text-green-600">$${rate.rateUSD ? rate.rateUSD.toFixed(2) : '0.00'}</span>
         </div>
         <div class="mb-3 space-y-1">
             <p class="text-sm text-gray-700"><strong>Customer:</strong> ${rate.customer}</p>
             <p class="text-sm text-gray-700"><strong>Country:</strong> ${rate.country}</p>
+            <p class="text-sm text-gray-600"><strong>INR:</strong> ₹${rate.rateINR ? rate.rateINR.toFixed(2) : '0.00'}</p>
+            <p class="text-sm text-gray-600"><strong>AED:</strong> د.إ${rate.rateAED ? rate.rateAED.toFixed(2) : '0.00'}</p>
         </div>
         <div class="flex justify-between items-center border-t border-gray-100 pt-2">
             <div class="text-xs text-gray-500">
@@ -390,6 +461,7 @@ function setupRateCardButtons() {
 }
 
 
+// UPDATED: Populates all new fields
 async function handleEditRate(id) {
     try {
         const rateRef = doc(db, `artifacts/${appId}/public/data/rates`, id);
@@ -399,7 +471,10 @@ async function handleEditRate(id) {
             $('#customer').value = rate.customer;
             $('#country').value = rate.country;
             $('#motor').value = rate.motor;
-            $('#price').value = rate.price;
+            $('#rate-inr').value = rate.rateINR;
+            $('#rate-usd').value = rate.rateUSD;
+            $('#rate-aed').value = rate.rateAED;
+            
             editingRateId = id;
             $('#form-title').innerText = 'Edit Rate';
             $('#submit-rate-button').innerText = 'Update Rate';
@@ -470,7 +545,7 @@ function listenForHistory() {
     rateDataListeners.push(unsub);
 }
 
-// Helper function to create dashboard cards
+// Helper function to create dashboard cards (UPDATED)
 function createDashboardCard(entry) {
     const card = document.createElement('div');
     card.className = 'bg-white p-4 rounded-lg shadow-md';
@@ -481,14 +556,18 @@ function createDashboardCard(entry) {
     card.innerHTML = `
         <h3 class="text-sm font-bold text-gray-800 uppercase truncate">${entry.customer}</h3>
         <p class="text-xs text-gray-500 mb-2 truncate">${entry.motor}</p>
-        <p class="text-3xl font-bold text-gray-900 mb-2">$${entry.price ? entry.price.toFixed(2) : '0.00'}</p>
+        <div class="mb-2 space-y-1">
+            <p class="text-xl font-bold text-green-600">$${entry.rateUSD ? entry.rateUSD.toFixed(2) : '0.00'}</p>
+            <p class="text-xl font-bold text-blue-600">₹${entry.rateINR ? entry.rateINR.toFixed(2) : '0.00'}</p>
+            <p class="text-xl font-bold text-gray-700">د.إ${entry.rateAED ? entry.rateAED.toFixed(2) : '0.00'}</p>
+        </div>
         <p class="text-xs text-gray-400">by ${entry.updatedBy || 'System'}</p>
         <p class="text-xs text-gray-400">${date} ${time}</p>
     `;
     return card;
 }
 
-// Helper function to create full history cards
+// Helper function to create full history cards (UPDATED)
 function createHistoryCard(entry) {
     const card = document.createElement('div');
     card.className = 'bg-white p-4 rounded-lg shadow';
@@ -504,7 +583,9 @@ function createHistoryCard(entry) {
         </div>
         <p class="text-sm text-gray-700"><strong>Customer:</strong> ${entry.customer}</p>
         <p class="text-sm text-gray-700"><strong>Country:</strong> ${entry.country}</p>
-        <p class="text-sm font-medium text-gray-800">Price: $${entry.price ? entry.price.toFixed(2) : 'N/A'}</p>
+        <p class="text-sm font-medium text-gray-800">Price (INR): ₹${entry.rateINR ? entry.rateINR.toFixed(2) : 'N/A'}</p>
+        <p class="text-sm font-medium text-gray-800">Price (USD): $${entry.rateUSD ? entry.rateUSD.toFixed(2) : 'N/A'}</p>
+        <p class="text-sm font-medium text-gray-800">Price (AED): د.إ${entry.rateAED ? entry.rateAED.toFixed(2) : 'N/A'}</p>
         <div class="border-t border-gray-100 mt-3 pt-2 text-xs text-gray-500">
             <p>${entry.timestamp ? new Date(entry.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
             <p>User: ${entry.updatedBy || entry.deletedBy || 'N/A'}</p>
