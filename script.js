@@ -26,7 +26,7 @@ try {
                 appId: "1:846627805911:web:bff1f87aa722b05e8d6e92",
                 measurementId: "G-K90ZHKT0TQ"
             };
-   
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     if (firebaseConfig.apiKey.startsWith("AIzaSy...")) {
          setTimeout(() => alert("CRITICAL: You must paste your Firebase config into the 'catch' block in script.js!"), 0);
@@ -141,7 +141,7 @@ function showPage(pageId) {
     const targetPage = $(`#${pageId}`);
     if (targetPage) {
         targetPage.classList.remove('hidden');
-        console.log(`Mapsd to ${pageId}`); // Fixed typo "Mapsd"
+        console.log(`Mapsd to ${pageId}`);
     } else {
         console.error(`Page not found: ${pageId}`);
     }
@@ -220,20 +220,20 @@ function setupFormListeners() {
     $('#rate-inr').addEventListener('input', autoCalculateCurrencies);
 }
 
-// NEW: Function to fetch and store rates
 async function fetchExchangeRates() {
-    // 🚨 PASTE YOUR NEW API KEY HERE 🚨
-    const API_KEY = "35b11bf367bb2fbbbef5e131"; // <-- REPLACE THIS
+    // 🚨 PASTE YOUR *NEW* API KEY HERE 🚨
+    const PLACEHOLDER_KEY = "YOUR_NEW_API_KEY_GOES_HERE";
+    const API_KEY = "48153e7aa845cbebb36764ca"; // <-- REPLACE THIS
     const API_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
 
     // *** THIS IS THE FIX ***
     // This 'if' block now checks for the placeholder string, NOT your key.
-    if (API_KEY === "35b11bf367bb2fbbbef5e131") {
+    if (API_KEY === PLACEHOLDER_KEY) {
         console.error("Exchange rate API key is missing. Using default fallback rates.");
         alert("Exchange rate API key is missing from script.js. Please add it to get live rates. Using default values.");
         return; // Use the default values
     }
-    // *** END OF FIX ***
+    // *** END OF FI***
 
     try {
         const response = await fetch(API_URL);
