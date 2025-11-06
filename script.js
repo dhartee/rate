@@ -16,7 +16,6 @@ try {
     }
 } catch (e) {
     console.warn(e.message); 
-    
     firebaseConfig = {
                 apiKey: "AIzaSyCWkWLPUbgJElIb-pjytAU4qhPWWFnmPIM",
                 authDomain: "rate-guru.firebaseapp.com",
@@ -53,11 +52,7 @@ let currentPin = "";
 const correctPin = "1234"; 
 let editingRateId = null; 
 let rateDataListeners = []; 
-// NEW: Global object to store fetched exchange rates
-let exchangeRates = {
-    USD_TO_INR: 83.50, // Default fallback rate
-    USD_TO_AED: 3.67   // Default fallback rate
-};
+// REMOVED exchangeRates global object
 
 // --- App Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -105,8 +100,7 @@ async function authenticateUser() {
 
 // --- Initial Data Loading (UPDATED) ---
 async function loadInitialData() {
-    // Fetch rates first
-    await fetchExchangeRates(); 
+    // REMOVED await fetchExchangeRates(); 
     
     // Now load the rest of the app data
     loadAndPopulateDatalist('customer-list', getCustomersCollection(), 'name');
@@ -216,60 +210,72 @@ function setupFormListeners() {
     $('#clear-form-button').addEventListener('click', clearRateForm);
     $('#filter-input').addEventListener('input', filterRateCards);
     
-    // NEW: Add listener for automatic calculation
-    $('#rate-inr').addEventListener('input', autoCalculateCurrencies);
+    // NEW: Add listeners for all manual calculation fields
+    $('#rate-inr').addEventListener('input', (e) => autoCalculateCurrencies(e.target.id));
+    $('#rate-usd').addEventListener('input', (e) => autoCalculateCurrencies(e.target.id));
+    $('#rate-aed').addEventListener('input', (e) => autoCalculateCurrencies(e.target.id));
+    $('#exchange-rate-inr').addEventListener('input', () => autoCalculateCurrencies('rate-inr')); // Recalculate from INR
+    $('#exchange-rate-aed').addEventListener('input', () => autoCalculateCurrencies('rate-inr')); // Recalculate from INR
 }
 
-async function fetchExchangeRates() {
-    // 🚨 PASTE YOUR *NEW* API KEY HERE 🚨
-    const PLACEHOLDER_KEY = "YOUR_NEW_API_KEY_GOES_HERE";
-    const API_KEY = "48153e7aa845cbebb36764ca"; // <-- REPLACE THIS
-    const API_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`;
+// REMOVED fetchExchangeRates() function
 
-    // *** THIS IS THE FIX ***
-    // This 'if' block now checks for the placeholder string, NOT your key.
-    if (API_KEY === PLACEHOLDER_KEY) {
-        console.error("Exchange rate API key is missing. Using default fallback rates.");
-        alert("Exchange rate API key is missing from script.js. Please add it to get live rates. Using default values.");
-        return; // Use the default values
+// NEW: Function to auto-calculate currencies based on manual input
+function autoCalculateCurrencies(sourceId) {
+    // Get all 5 values
+    const exINR = parseFloat($('#exchange-rate-inr').value); // 1 USD = ? INR
+    const exAED = parseFloat($('#exchange-rate-aed').value); // 1 USD = ? AED
+    
+    const rateINRInput = $('#rate-inr');
+    const rateUSDInput = $('#rate-usd');
+    const rateAEDInput = $('#rate-aed');
+    
+    // Check if exchange rates are valid
+    if (isNaN(exINR) || exINR <= 0 || isNaN(exAED) || exAED <= 0) {
+        // Can't calculate without exchange rates
+        return;
     }
-    // *** END OF FI***
 
-    try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
+    // Temporarily remove listeners to prevent infinite loops
+    $$('.calc-input').forEach(input => input.removeEventListener('input', autoCalculateCurrencies));
 
-        if (data.result === "success") {
-            exchangeRates.USD_TO_INR = data.conversion_rates.INR;
-            exchangeRates.USD_TO_AED = data.conversion_rates.AED;
-            console.log(`Successfully fetched rates: 1 USD = ${exchangeRates.USD_TO_INR} INR, 1 USD = ${exchangeRates.USD_TO_AED} AED`);
-        } else {
-            console.error("Failed to fetch exchange rates from API:", data['error-type']);
-            alert("Failed to fetch live exchange rates. Using default values.");
-        }
-    } catch (error) {
-        console.error("Error connecting to exchange rate API:", error);
-        alert("Error connecting to exchange rate API. Using default values.");
+    // Calculate based on which field was changed
+    switch(sourceId) {
+        case 'rate-inr':
+            const inr = parseFloat(rateINRInput.value);
+            if (!isNaN(inr)) {
+                const usd = inr / exINR;
+                const aed = usd * exAED;
+                rateUSDInput.value = usd.toFixed(2);
+                rateAEDInput.value = aed.toFixed(2);
+            }
+            break;
+            
+        case 'rate-usd':
+            const usd = parseFloat(rateUSDInput.value);
+            if (!isNaN(usd)) {
+                const inr = usd * exINR;
+                const aed = usd * exAED;
+                rateINRInput.value = inr.toFixed(2);
+                rateAEDInput.value = aed.toFixed(2);
+            }
+            break;
+            
+        case 'rate-aed':
+            const aed = parseFloat(rateAEDInput.value);
+            if (!isNaN(aed)) {
+                const usd = aed / exAED;
+                const inr = usd * exINR;
+                rateUSDInput.value = usd.toFixed(2);
+                rateINRInput.value = inr.toFixed(2);
+            }
+            break;
     }
-}
 
-
-// NEW: Function to auto-calculate currencies
-function autoCalculateCurrencies() {
-    const inrValue = parseFloat($('#rate-inr').value);
-    const usdInput = $('#rate-usd');
-    const aedInput = $('#rate-aed');
-
-    if (!isNaN(inrValue) && exchangeRates.USD_TO_INR > 0) {
-        const usdValue = inrValue / exchangeRates.USD_TO_INR;
-        const aedValue = usdValue * exchangeRates.USD_TO_AED;
-
-        usdInput.value = usdValue.toFixed(2);
-        aedInput.value = aedValue.toFixed(2);
-    } else {
-        usdInput.value = '';
-        aedInput.value = '';
-    }
+    // Re-add listeners after calculation
+    $$('.calc-input').forEach(input => {
+        input.addEventListener('input', (e) => autoCalculateCurrencies(e.target.id));
+    });
 }
 
 
@@ -282,15 +288,19 @@ async function handleRateFormSubmit(e) {
         country: $('#country').value.trim(),
         motor: $('#motor').value.trim(),
         rateINR: parseFloat($('#rate-inr').value),
-        rateUSD: parseFloat($('#rate-usd').value), // Read from the disabled field
-        rateAED: parseFloat($('#rate-aed').value), // Read from the disabled field
+        rateUSD: parseFloat($('#rate-usd').value), 
+        rateAED: parseFloat($('#rate-aed').value), 
+        exchangeRateINR: parseFloat($('#exchange-rate-inr').value), // Save the rate
+        exchangeRateAED: parseFloat($('#exchange-rate-aed').value), // Save the rate
         lastUpdated: serverTimestamp(),
         updatedBy: userId || 'unknown'
     };
 
     // UPDATED: Validation
-    if (!rateData.customer || !rateData.country || !rateData.motor || isNaN(rateData.rateINR) || isNaN(rateData.rateUSD) || isNaN(rateData.rateAED)) {
-        alert("Please fill in all fields with valid data. The INR field must be filled to calculate USD and AED.");
+    if (!rateData.customer || !rateData.country || !rateData.motor || 
+        isNaN(rateData.rateINR) || isNaN(rateData.rateUSD) || isNaN(rateData.rateAED) ||
+        isNaN(rateData.exchangeRateINR) || isNaN(rateData.exchangeRateAED)) {
+        alert("Please fill in all fields with valid data.");
         return;
     }
 
@@ -342,9 +352,6 @@ async function saveToHelperCollection(collectionRef, data) {
 
 function clearRateForm() {
     $('#rate-form').reset(); // This clears all text/number inputs
-    // Manually clear the disabled fields too
-    $('#rate-usd').value = '';
-    $('#rate-aed').value = '';
     editingRateId = null;
     $('#submit-rate-button').innerText = 'Save Rate';
     $('#form-title').innerText = 'Add New Rate';
@@ -471,6 +478,8 @@ async function handleEditRate(id) {
             $('#customer').value = rate.customer;
             $('#country').value = rate.country;
             $('#motor').value = rate.motor;
+            $('#exchange-rate-inr').value = rate.exchangeRateINR; // Load saved rate
+            $('#exchange-rate-aed').value = rate.exchangeRateAED; // Load saved rate
             $('#rate-inr').value = rate.rateINR;
             $('#rate-usd').value = rate.rateUSD;
             $('#rate-aed').value = rate.rateAED;
@@ -586,6 +595,7 @@ function createHistoryCard(entry) {
         <p class="text-sm font-medium text-gray-800">Price (INR): ₹${entry.rateINR ? entry.rateINR.toFixed(2) : 'N/A'}</p>
         <p class="text-sm font-medium text-gray-800">Price (USD): $${entry.rateUSD ? entry.rateUSD.toFixed(2) : 'N/A'}</p>
         <p class="text-sm font-medium text-gray-800">Price (AED): د.إ${entry.rateAED ? entry.rateAED.toFixed(2) : 'N/A'}</p>
+        <p class="text-xs text-gray-500 mt-2">Rates at time of entry: 1 USD = ${entry.exchangeRateINR} INR, 1 USD = ${entry.exchangeRateAED} AED</p>
         <div class="border-t border-gray-100 mt-3 pt-2 text-xs text-gray-500">
             <p>${entry.timestamp ? new Date(entry.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
             <p>User: ${entry.updatedBy || entry.deletedBy || 'N/A'}</p>
